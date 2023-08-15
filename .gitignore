@@ -1,0 +1,10 @@
+# All
+**/__pycache__
+**/*.pyc
+**/venv
+**/*.env
+**/build
+
+# Extractor
+extractor/vendor
+extractor/repositories/github

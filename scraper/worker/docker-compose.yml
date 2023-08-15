@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+
+  worker-broker:
+    container_name: repository-scraping-worker-broker
+    hostname: worker-broker
+    image: redis:7.0.11-alpine
+    networks:
+      - repository-scraper
+    volumes:
+      - worker-broker-volume:/data
+      - ./config/worker-broker.conf:/usr/local/etc/redis/redis.conf:ro
+    command: redis-server /usr/local/etc/redis/redis.conf
+  
+  worker:
+    container_name: repository-scraping-worker
+    hostname: worker
+    image: repository-scraping-worker
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - ${WORKER_ENV_FILE}
+    networks:
+      - repository-scraper
+    depends_on:
+      - worker-broker
+
+networks:
+  repository-scraper:
+    name: repository-scraper
+    external: true
+
+volumes:
+  worker-broker-volume:
+    name: repository-scraping-worker-broker-volume

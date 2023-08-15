@@ -1,0 +1,14 @@
+version: '3.9'
+
+services:
+
+  adminer:
+    container_name: repository-scraping-adminer
+    hostname: adminer
+    image: adminer:latest
+    ports:
+      - 8080:8080
+    networks:
+      - repository-scraper
+    depends_on:
+      - database

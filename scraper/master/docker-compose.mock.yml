@@ -1,0 +1,13 @@
+version: '3.9'
+
+services:
+
+  github-mock:
+    container_name: repository-scraping-github-mock
+    hostname: github-mock
+    image: repository-scraper-github-mock
+    build:
+      context: mocks/github-mock
+      dockerfile: Dockerfile
+    networks:
+      - repository-scraper

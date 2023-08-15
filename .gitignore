@@ -6,5 +6,5 @@
 **/build
 
 # Extractor
-extractor/vendor
-extractor/repositories/github
+worker/src/extractor/vendor
+worker/src/extractor/repositories/github

@@ -13,16 +13,9 @@ Language.build_library(
 
 PYTHON = Language('build/languages.so', 'python')
 
-def create_parser(lang):
-    parser = Parser()
-    parser.set_language(lang)
-    return parser
-
 def parse_code(path, lang):
     with open(path, "rb") as file:
         code = file.read()
-    
-    parser = create_parser(lang)
-    tree = parser.parse(code)
-
-    return tree
+    parser = Parser()
+    parser.set_language(lang)
+    return parser.parse(code)

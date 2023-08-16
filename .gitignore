@@ -7,4 +7,4 @@
 
 # Extractor
 worker/src/extractor/vendor
-worker/src/extractor/repositories/github
+worker/repositories/github

@@ -27,6 +27,17 @@ services:
       - database-volume:/var/lib/postgresql/data
       - ./config/database.init.sql:/docker-entrypoint-initdb.d/init.sql:ro
 
+  mongo:
+    image: mongo:latest
+    container_name: extractor-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-volume:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+
   master:
     container_name: repository-scraping-master
     hostname: master
@@ -53,3 +64,5 @@ volumes:
     name: repository-scraping-database-volume
   master-broker-volume:
     name: repository-scraping-master-broker-volume
+  mongo-volume:
+    name: extractor-mongo-volume

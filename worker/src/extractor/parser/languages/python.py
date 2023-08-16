@@ -1,7 +1,7 @@
 import os
 import glob
 from tree_sitter import Node, Tree
-from parser.model import Component, Import, Class, Function, Decorator, Call, CodeBlock, Module, Repository
+from worker.src.extractor.src.parser.components import Component, Import, Class, Function, Decorator, Call, CodeBlock, Module, Repository
 from parser.parser import parse_code, PYTHON
 
 def process_repository(github_id, name, url, path):

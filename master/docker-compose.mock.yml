@@ -5,7 +5,7 @@ services:
   github-mock:
     container_name: repository-scraping-github-mock
     hostname: github-mock
-    image: repository-scraper-github-mock
+    image: repository-scraping-github-mock
     build:
       context: mocks/github-mock
       dockerfile: Dockerfile

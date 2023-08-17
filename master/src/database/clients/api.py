@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from master.src.database.models import RepositoryModel
+from src.database.models import RepositoryModel
 from src.database.engine import Session
 from src.database.shemas import Metadata, Metric
 from src.database.models import MetadataModel, MetricModel, AnalyzeModel, RepositoryModel
@@ -11,7 +11,7 @@ class ApiClient(ABC):
         pass
 
     @abstractmethod
-    def post_repository(self, repository: RepositoryModel):
+    def post_repository(self, repository: dict, modules: list[dict]):
         pass
 
     @abstractmethod
@@ -34,13 +34,13 @@ class PostgresApiClient(ApiClient):
     
     def post_repository(self, repository: dict, modules: list[dict]):
         db = mongo_client['data']
-        modules = db[f'modules-{repository["github_id"]}']
+        modules_collection = db[f'modules-{repository["github_id"]}']
         ids = []
         for module in modules:
-            ids.append(modules.insert_one(module).inserted_id)
-        repositories = db['repositories']
+            ids.append(modules_collection.insert_one(module).inserted_id)
+        repositories_collection = db['repositories']
         repository['modules'] = ids
-        repositories.insert_one(repository)
+        repositories_collection.insert_one(repository)
 
     def post_metric(self, analyze: AnalyzeModel):
         session = Session()

@@ -22,7 +22,7 @@ def downloading():
         destination = f"/repositories/github/{metadata['repository_id']}"
         subprocess.run(['git', 'clone', metadata['url'], destination])
         logging.info(f"Repository downloaded to {destination}")
-        analyzing.delay(metadata['repository_id'])
+        analyzing.delay(metadata['repository_id'], 'undefined', metadata['url'], destination)
     else:
         logging.error(f"No metadata available")
         time.sleep(60)

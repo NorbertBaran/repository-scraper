@@ -29,7 +29,8 @@ services:
 
   mongo:
     image: mongo:latest
-    container_name: extractor-mongo
+    container_name: repository-scraping-mongo
+    hostname: mongo
     ports:
       - "27017:27017"
     volumes:
@@ -37,6 +38,8 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: admin
+    networks:
+      - repository-scraper
 
   master:
     container_name: repository-scraping-master
@@ -65,4 +68,4 @@ volumes:
   master-broker-volume:
     name: repository-scraping-master-broker-volume
   mongo-volume:
-    name: extractor-mongo-volume
+    name: repository-scraping-mongo-volume

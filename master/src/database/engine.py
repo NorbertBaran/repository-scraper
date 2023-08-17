@@ -10,5 +10,5 @@ engine = create_engine(DATABASE_CONNECTION)
 Base = declarative_base()
 Session = sessionmaker(bind=engine)
 
-MONGO_CONNECTION = os.environ.get("DATABASE_CONNECTION", "mongodb://admin:admin@localhost:27017/")
+MONGO_CONNECTION = os.environ.get("MONGO_CONNECTION", "mongodb://admin:admin@localhost:27017/")
 mongo_client = MongoClient(MONGO_CONNECTION)

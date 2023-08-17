@@ -1,8 +1,8 @@
 import os
 import glob
 from tree_sitter import Node, Tree
-from worker.src.extractor.src.parser.components import Component, Import, Class, Function, Decorator, Call, CodeBlock, Module, Repository
-from parser.parser import parse_code, PYTHON
+from src.extractor.parser.components import Component, Import, Class, Function, Decorator, Call, CodeBlock, Module, Repository
+from src.extractor.parser.parser import parse_code, PYTHON
 
 def process_repository(github_id, name, url, path):
     modules = glob.glob(os.path.join(path, "**/*.py"), recursive=True)

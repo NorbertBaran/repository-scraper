@@ -1,6 +1,7 @@
 version: "3.9"
 
 services:
+
   redis:
     container_name: repository-scraping-redis
     hostname: redis
@@ -11,10 +12,8 @@ services:
       - redis-volume:/data
       - ./config/redis.conf:/usr/local/etc/redis/redis.conf:ro
     command: redis-server /usr/local/etc/redis/redis.conf
-    profiles:
-      - masterless
   
-  worker: &base-worker
+  worker:
     container_name: repository-scraping-worker
     hostname: worker
     image: repository-scraping-worker
@@ -25,37 +24,15 @@ services:
       - REDIS_CONNECTION=${REDIS_CONNECTION}
       - MASTER_URL=${MASTER_URL}
       - REPOSITORIES_PATH=${REPOSITORIES_PATH}
+    networks:
+      - repository-scraper
     depends_on:
       - redis
-  
-  compact-worker:
-    <<: *base-worker
-    networks:
-      - compact-repository-scraper
-    profiles:
-      - compact
-  
-  masterless-worker:
-    <<: *base-worker
-    networks:
-      - masterlesss-repository-scraper
-    profiles:
-      - masterless
 
 networks:
-  compact-repository-scraper:
+  repository-scraper:
     name: repository-scraper
-    external: true
-    profiles:
-      - compact
-    
-  masterless-repository-scraper:
-    name: repository-scraper
-    profiles:
-      - masterless
 
 volumes:
   redis-volume:
     name: repository-scraping-redis-volume
-    profiles:
-      - masterless

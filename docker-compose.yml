@@ -1,0 +1,72 @@
+version: "3.9"
+
+services:
+
+  redis:
+    container_name: repository-scraping-redis
+    hostname: redis
+    image: redis:7.0.11-alpine
+    networks:
+      - repository-scraper
+    volumes:
+      - redis-volume:/data
+      - ./config/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    command: redis-server /usr/local/etc/redis/redis.conf
+
+  postgres:
+    container_name: repository-scraping-postgres
+    hostname: postgres
+    image: postgres:15.3-alpine3.18
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: repository-scraper
+    networks:
+      - repository-scraper
+    volumes:
+      - postgres-volume:/var/lib/postgresql/data
+      - ./config/postgres.init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+  master:
+    container_name: repository-scraping-master
+    hostname: master
+    image: repository-scraping-master
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - REDIS_CONNECTION=${REDIS_CONNECTION}
+      - POSTGRES_CONNECTION=${POSTGRES_CONNECTION}
+    ports:
+      - ${MASTER_PORT}:80
+    networks:
+      - repository-scraper
+    depends_on:
+      - redis
+      - postgres
+  
+  worker:
+    container_name: repository-scraping-worker
+    hostname: worker
+    image: repository-scraping-worker
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - REDIS_CONNECTION=${REDIS_CONNECTION}
+      - MASTER_URL=${MASTER_URL}
+      - REPOSITORIES_PATH=${REPOSITORIES_PATH}
+    networks:
+      - repository-scraper
+    depends_on:
+      - redis
+
+networks:
+  repository-scraper:
+    name: repository-scraper
+
+volumes:
+  postgres-volume:
+    name: repository-scraping-postgres-volume
+  redis-volume:
+    name: repository-scraping-redis-volume

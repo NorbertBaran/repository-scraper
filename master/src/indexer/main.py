@@ -13,7 +13,7 @@ app = Celery('indexing-worker', broker=MASTER_BROKER)
 # from main import app
 database: IndexingClient = PostgresIndexingClient()
 
-def get_next_github_metadata_batch(): 
+def get_next_github_metadata_batch():
     page = database.get_page()
     logging.info(f'Downloading github repositories matadata from page: {page}')
     params = {'q': 'stars:>0', 'sort': 'stars', 'order': 'desc', 'per_page': 3, 'page': page}

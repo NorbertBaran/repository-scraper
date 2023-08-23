@@ -7,29 +7,39 @@ import time
 from src.analyzer.main import analyzing
 
 WORKER_BROKER = os.environ.get("WORKER_BROKER")
-API = os.environ.get("API")
-
+MASTER = os.environ.get("MASTER")
+REPOSITORIES = os.environ.get('REPOSITORIES')
 app = Celery('downloading-worker', broker=WORKER_BROKER)
+
+def get_repository_metadata():
+    response = requests.get(f'{MASTER}/metadata')
+    if response.status_code == 200:
+        metadata = response.json()
+        return metadata
+    return None
+
+def clone_repository(id: int, url: str):
+    try:
+        subprocess.run(['git', 'clone', url, f'{REPOSITORIES}/{id}'])
+        return True
+    except:
+        return False
 
 @app.task(queue='downloading-queue')
 def downloading():
-    logging.info(f"Metadata requesting")
-    response = requests.get(f'{API}/metadata')
-    logging.info(f"Metadata response status code: {response.status_code}")
-    if response.status_code == 200:
-        metadata = response.json()
-        logging.info(f"Downloading repository (id: {metadata['repository_id']}, url: {metadata['url']})")
-        destination = f"/repositories/github/{metadata['repository_id']}"
-        subprocess.run(['git', 'clone', metadata['url'], destination])
-        logging.info(f"Repository downloaded to {destination}")
-        analyzing.delay(metadata['repository_id'], 'undefined', metadata['url'], destination)
+    metadata = get_repository_metadata()
+    if metadata:
+        logging.info(f'Got metadata from master successfully')
+        repository_id, name, clone_url = metadata['repository_id'], metadata['name'], metadata['clone_url']
+        cloned = clone_repository(repository_id, clone_url)
+        if cloned:
+            logging.info(f'Repository {repository_id} cloned successfully')
+            analyzing.delay(repository_id, name, clone_url)
+        else:
+            logging.error(f'Failed to clone repository {repository_id}')
     else:
-        logging.error(f"No metadata available")
+        logging.error(f'Failed to get metadata from master')
         time.sleep(60)
     downloading.delay()
 
-def downloading_init():
-    logging.info(f"Downloading init")
-    downloading.delay()
-
-downloading_init()
+downloading.delay()

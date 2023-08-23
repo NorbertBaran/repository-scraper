@@ -5,6 +5,5 @@
 **/*.env
 **/build
 
-# Extractor
-worker/src/extractor/vendor
-worker/repositories/github
+# Worker
+worker/mocks/repositories/

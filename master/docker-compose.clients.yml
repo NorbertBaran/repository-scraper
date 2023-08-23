@@ -1,3 +1,4 @@
+# Databases' clients for data visualization simplifying manual testing
 version: '3.9'
 
 services:

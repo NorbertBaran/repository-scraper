@@ -6,11 +6,10 @@ import time
 from src.database.clients.indexing import IndexingClient, PostgresIndexingClient
 from src.database.models import MetadataModel
 
-MASTER_BROKER = os.environ.get("MASTER_BROKER")
-GITHUB_API = os.environ.get("GITHUB_API")
+REDIS = os.environ.get("REDIS_CONNECTION")
+GITHUB_API = 'https://api.github.com'
 
-app = Celery('indexing-worker', broker=MASTER_BROKER)
-# from main import app
+app = Celery('indexing-worker', broker=REDIS)
 database: IndexingClient = PostgresIndexingClient()
 
 def get_next_github_metadata_batch():
@@ -28,6 +27,7 @@ def get_next_github_metadata_batch():
 
     selected_metadata_list = [MetadataModel(
         repository_id= metadata['id'],
+        name=metadata['name'],
         url=metadata['clone_url']
         ) for metadata in metadata_batch['items']]
 

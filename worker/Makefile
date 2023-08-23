@@ -1,7 +1,14 @@
-prod:
-	docker compose -f docker-compose.yml --env-file env/prod.compose.env up -d --build
-test:
-	docker compose -f docker-compose.yml --env-file env/test.compose.env up -d --build
-clean-test:
-	docker compose -f docker-compose.yml --env-file env/test.compose.env down
-	docker volume rm repository-scraping-worker-broker-volume
+compact-prod:
+	docker compose --profile compact up --build -d
+compact-dev:
+	docker compose --profile compact up --build -d
+clean-compact-dev:
+	docker compose --profile compact down --rmi
+
+masterless-prod:
+	docker compose --profile masterless up --build -d
+masterless-dev:
+	docker compose --profile masterless up --build -d
+clean-masterless-dev:
+	docker compose --profile masterless down --rmi
+	docker volume rm repository-scraping-redis-volume

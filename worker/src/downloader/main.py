@@ -6,10 +6,10 @@ import subprocess
 import time
 from src.analyzer.main import analyzing
 
-WORKER_BROKER = os.environ.get("WORKER_BROKER")
-MASTER = os.environ.get("MASTER")
-REPOSITORIES = os.environ.get('REPOSITORIES')
-app = Celery('downloading-worker', broker=WORKER_BROKER)
+REDIS = os.environ.get("REDIS_CONNECTION")
+MASTER = os.environ.get("MASTER_URL")
+REPOSITORIES = os.environ.get('REPOSITORIES_PATH')
+app = Celery('downloading-worker', broker=REDIS)
 
 def get_repository_metadata():
     response = requests.get(f'{MASTER}/metadata')

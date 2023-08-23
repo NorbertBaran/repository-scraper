@@ -2,8 +2,7 @@
 **/__pycache__
 **/*.pyc
 **/venv
-**/*.env
 **/build
 
 # Worker
-worker/mocks/repositories/
+worker/mocks/repositories/github

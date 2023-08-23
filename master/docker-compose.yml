@@ -2,44 +2,30 @@ version: "3.9"
 
 services:
 
-  master-broker:
-    container_name: repository-scraping-master-broker
-    hostname: master-broker
+  redis:
+    container_name: repository-scraping-redis
+    hostname: redis
     image: redis:7.0.11-alpine
     networks:
       - repository-scraper
     volumes:
-      - master-broker-volume:/data
-      - ./config/master-broker.conf:/usr/local/etc/redis/redis.conf:ro
+      - redis-volume:/data
+      - ./config/redis.conf:/usr/local/etc/redis/redis.conf:ro
     command: redis-server /usr/local/etc/redis/redis.conf
 
-  database:
-    container_name: repository-scraping-database
-    hostname: database
+  postgres:
+    container_name: repository-scraping-postgres
+    hostname: postgres
     image: postgres:15.3-alpine3.18
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
-      POSTGRES_DB: repository-scraping
+      POSTGRES_DB: repository-scraper
     networks:
       - repository-scraper
     volumes:
-      - database-volume:/var/lib/postgresql/data
-      - ./config/database.init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-
-  mongo:
-    image: mongo:latest
-    container_name: repository-scraping-mongo
-    hostname: mongo
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo-volume:/data/db
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: admin
-    networks:
-      - repository-scraper
+      - postgres-volume:/var/lib/postgresql/data
+      - ./config/postgres.init.sql:/docker-entrypoint-initdb.d/init.sql:ro
 
   master:
     container_name: repository-scraping-master
@@ -48,24 +34,23 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    env_file:
-      - ${MASTER_ENV_FILE}
+    environment:
+      - REDIS_CONNECTION=${REDIS_CONNECTION}
+      - POSTGRES_CONNECTION=${POSTGRES_CONNECTION}
     ports:
-      - ${API_PORT}:80
+      - ${MASTER_PORT}:80
     networks:
       - repository-scraper
     depends_on:
-      - master-broker
-      - database
+      - redis
+      - postgres
 
 networks:
   repository-scraper:
     name: repository-scraper
 
 volumes:
-  database-volume:
-    name: repository-scraping-database-volume
-  master-broker-volume:
-    name: repository-scraping-master-broker-volume
-  mongo-volume:
-    name: repository-scraping-mongo-volume
+  postgres-volume:
+    name: repository-scraping-postgres-volume
+  redis-volume:
+    name: repository-scraping-redis-volume

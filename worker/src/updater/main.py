@@ -2,7 +2,6 @@ import logging
 import os
 from celery import Celery
 import requests
-from src.database.models import AnalyzeModel
 
 WORKER_BROKER = os.environ.get("WORKER_BROKER")
 MASTER = os.environ.get("MASTER")

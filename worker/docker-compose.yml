@@ -1,37 +1,61 @@
 version: "3.9"
 
 services:
-
-  worker-broker:
-    container_name: repository-scraping-worker-broker
-    hostname: worker-broker
+  redis:
+    container_name: repository-scraping-redis
+    hostname: redis
     image: redis:7.0.11-alpine
     networks:
       - repository-scraper
     volumes:
-      - worker-broker-volume:/data
-      - ./config/worker-broker.conf:/usr/local/etc/redis/redis.conf:ro
+      - redis-volume:/data
+      - ./config/redis.conf:/usr/local/etc/redis/redis.conf:ro
     command: redis-server /usr/local/etc/redis/redis.conf
+    profiles:
+      - masterless
   
-  worker:
+  worker: &base-worker
     container_name: repository-scraping-worker
     hostname: worker
     image: repository-scraping-worker
     build:
       context: .
       dockerfile: Dockerfile
-    env_file:
-      - ${WORKER_ENV_FILE}
-    networks:
-      - repository-scraper
+    environment:
+      - REDIS_CONNECTION=${REDIS_CONNECTION}
+      - MASTER_URL=${MASTER_URL}
+      - REPOSITORIES_PATH=${REPOSITORIES_PATH}
     depends_on:
-      - worker-broker
+      - redis
+  
+  compact-worker:
+    <<: *base-worker
+    networks:
+      - compact-repository-scraper
+    profiles:
+      - compact
+  
+  masterless-worker:
+    <<: *base-worker
+    networks:
+      - masterlesss-repository-scraper
+    profiles:
+      - masterless
 
 networks:
-  repository-scraper:
+  compact-repository-scraper:
     name: repository-scraper
     external: true
+    profiles:
+      - compact
+    
+  masterless-repository-scraper:
+    name: repository-scraper
+    profiles:
+      - masterless
 
 volumes:
-  worker-broker-volume:
-    name: repository-scraping-worker-broker-volume
+  redis-volume:
+    name: repository-scraping-redis-volume
+    profiles:
+      - masterless

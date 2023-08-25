@@ -1,4 +1,4 @@
-# Database client for data visualization
+# Database client for data visualization. Helpfull for manual testing.
 version: '3.9'
 
 services:

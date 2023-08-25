@@ -52,7 +52,7 @@ class Component(Base):
     raw_metrics_id = Column(Integer, ForeignKey('raw_metrics.id'))
     
     file = relationship("File", back_populates="components")
-    raw_metrics = relationship("RawMetrics", back_populates="file")
+    raw_metrics = relationship("RawMetrics")
 
 class File(Base):
     __tablename__ = 'files'
@@ -64,8 +64,8 @@ class File(Base):
     haltest_metrics_id = Column(Integer, ForeignKey('haltest_metrics.id'))
     
     repository = relationship("Repository", back_populates="files")
-    raw_metrics = relationship("RawMetrics", back_populates="file")
-    haltest_metrics = relationship("HaltestMetrics", back_populates="file")
+    raw_metrics = relationship("RawMetrics")
+    haltest_metrics = relationship("HaltestMetrics")
     components = relationship("Component", back_populates="file")
 
 class Repository(Base):
@@ -75,4 +75,4 @@ class Repository(Base):
     name = Column(String)
     clone_url = Column(String)
     
-    files: relationship("File", back_populates="repository")
+    files = relationship("File", back_populates="repository")

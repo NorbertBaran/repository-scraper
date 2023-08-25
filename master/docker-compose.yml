@@ -10,7 +10,7 @@ services:
       - repository-scraper
     volumes:
       - redis-volume:/data
-      - ./config/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
     command: redis-server /usr/local/etc/redis/redis.conf
 
   postgres:
@@ -25,7 +25,6 @@ services:
       - repository-scraper
     volumes:
       - postgres-volume:/var/lib/postgresql/data
-      - ./config/postgres.init.sql:/docker-entrypoint-initdb.d/init.sql:ro
 
   master:
     container_name: repository-scraping-master

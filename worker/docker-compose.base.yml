@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  
+  worker:
+    container_name: repository-scraping-worker
+    hostname: worker
+    image: repository-scraping-worker
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - REDIS_CONNECTION=${REDIS_CONNECTION}
+      - MASTER_URL=${MASTER_URL}
+      - REPOSITORIES_PATH=${REPOSITORIES_PATH}
+    networks:
+      - repository-scraper
+    depends_on:
+      - redis

@@ -1,5 +1,8 @@
 version: "3.9"
 
+include:
+  - docker-compose.base.yml
+
 services:
 
   redis:
@@ -10,24 +13,8 @@ services:
       - repository-scraper
     volumes:
       - redis-volume:/data
-      - ./config/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
     command: redis-server /usr/local/etc/redis/redis.conf
-  
-  worker:
-    container_name: repository-scraping-worker
-    hostname: worker
-    image: repository-scraping-worker
-    build:
-      context: .
-      dockerfile: Dockerfile
-    environment:
-      - REDIS_CONNECTION=${REDIS_CONNECTION}
-      - MASTER_URL=${MASTER_URL}
-      - REPOSITORIES_PATH=${REPOSITORIES_PATH}
-    networks:
-      - repository-scraper
-    depends_on:
-      - redis
 
 networks:
   repository-scraper:

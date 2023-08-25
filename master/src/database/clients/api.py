@@ -9,11 +9,10 @@ class ApiClient(ABC):
         pass
 
     @abstractmethod
-    def post_metrics(self, repository: RepositoryModel):
+    def post_metric(self, repository: RepositoryModel):
         pass
 
 class PostgresApiClient(ApiClient):
-    # TODO: Adjust to new models (Migration from old structure to new)
     def get_metadata(self):
         session = Session()
         metadata = session.query(Metadata).first()

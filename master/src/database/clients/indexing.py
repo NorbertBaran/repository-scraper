@@ -23,7 +23,6 @@ class PostgresIndexingClient(IndexingClient):
         variable = session.query(Variable).filter_by(name='page').first()
 
         if not variable:
-            print('Not variable')
             variable = Variable(name='page', value='1')
             session.add(variable)
             session.commit()

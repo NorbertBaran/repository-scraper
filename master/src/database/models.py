@@ -33,14 +33,14 @@ class ComponentModel(BaseModel):
     begin: int
     end: int
     classname: str
-    raw_metrics = RawMetricsModel
+    raw_metrics: RawMetricsModel
 
 class FileModel(BaseModel):
     path: str
     score: float
-    raw_metrics = RawMetricsModel
-    haltest_metrics = HaltestMetricsModel
-    components = list[ComponentModel]
+    raw_metrics: RawMetricsModel
+    haltest_metrics: HaltestMetricsModel
+    components: list[ComponentModel]
 
 class RepositoryModel(BaseModel):
     repository_id: int

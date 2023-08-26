@@ -33,6 +33,7 @@ class ComponentModel(BaseModel):
     begin: int
     end: int
     classname: str
+    complexity: int
     raw_metrics: RawMetricsModel
 
 class FileModel(BaseModel):

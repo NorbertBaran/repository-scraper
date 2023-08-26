@@ -12,109 +12,173 @@ from radon.metrics import h_visit, mi_visit
 
 from src.models import *
 
+import multiprocessing
+
+logging.basicConfig(level=logging.INFO)
+
 REDIS = os.environ.get("REDIS_CONNECTION")
-REPOSITORIES = os.environ.get('REPOSITORIES_PATH')
+# REPOSITORIES = os.environ.get('REPOSITORIES_PATH')
+REPOSITORIES = 'repositories/example'
 app = Celery('analyzing-worker', broker=REDIS)
 
 def analyze_repository(id: int, name: str, clone_url: str):
+
+    def run_with_timeout(func, args=(), timeout=0.1):
+        manager = multiprocessing.Manager()
+        result = manager.list()
+        
+        def worker():
+            result.append(func(*args))
+        
+        process = multiprocessing.Process(target=worker)
+        process.start()
+        process.join(timeout)
+        
+        if process.is_alive():
+            process.terminate()
+            return None
+        else:
+            return result[0]
+
     def create_structure(path: str, code:str):
         try:
+            print('Analyzing')
             global_raw_metrics_module = analyze(code)
-            global_raw_metrics = {
-                'loc': global_raw_metrics_module.loc,
-                'lloc': global_raw_metrics_module.lloc,
-                'comments': global_raw_metrics_module.comments,
-                'multi': global_raw_metrics_module.multi,
-                'blank': global_raw_metrics_module.blank,
-                'single_comments': global_raw_metrics_module.single_comments
-            }
-
+            global_raw_metrics = RawMetricsModel(
+                loc=global_raw_metrics_module.loc,
+                lloc=global_raw_metrics_module.lloc,
+                comments=global_raw_metrics_module.comments,
+                multi=global_raw_metrics_module.multi,
+                blank=global_raw_metrics_module.blank,
+                single_comments=global_raw_metrics_module.single_comments
+            )
+            print('H visiting')
             global_haltest_metrics_module = h_visit(code)
-            global_haltest_metrics = {
-                'h1': global_haltest_metrics_module.total.h1,
-                'h2': global_haltest_metrics_module.total.h2,
-                'n1': global_haltest_metrics_module.total.N1,
-                'n2': global_haltest_metrics_module.total.N2,
-                'vocabulary': global_haltest_metrics_module.total.vocabulary,
-                'length': global_haltest_metrics_module.total.length,
-                'calculated_length': global_haltest_metrics_module.total.calculated_length,
-                'volume': global_haltest_metrics_module.total.volume,
-                'difficulty': global_haltest_metrics_module.total.difficulty,
-                'effort': global_haltest_metrics_module.total.effort,
-                'time': global_haltest_metrics_module.total.time,
-                'bugs': global_haltest_metrics_module.total.bugs
-            }
+            global_haltest_metrics = HaltestMetricsModel(
+                h1=global_haltest_metrics_module.total.h1,
+                h2=global_haltest_metrics_module.total.h2,
+                n1=global_haltest_metrics_module.total.N1,
+                n2=global_haltest_metrics_module.total.N2,
+                vocabulary=global_haltest_metrics_module.total.vocabulary,
+                length=global_haltest_metrics_module.total.length,
+                calculated_length=global_haltest_metrics_module.total.calculated_length,
+                volume=global_haltest_metrics_module.total.volume,
+                difficulty=global_haltest_metrics_module.total.difficulty,
+                effort=global_haltest_metrics_module.total.effort,
+                time=global_haltest_metrics_module.total.time,
+                bugs=global_haltest_metrics_module.total.bugs
+            )
 
-            structure = {
-                'path': path,
-                'raw_metrics': global_raw_metrics,
-                'haltest_metrics': global_haltest_metrics,
-                'components': [],
-                'score': mi_visit(code, True)
-            }
-
+            file_structure = FileModel(
+                path=path,
+                score=mi_visit(code, True),
+                raw_metrics=global_raw_metrics,
+                haltest_metrics=global_haltest_metrics,
+                components=[]
+            )
+            print('CC visiting')
             visit = cc_visit(code)
             lines = code.split('\n')
-
+            print('Component visiting')
             for component in visit:
-                component_metrics = {}
-
-                component_metrics['name'] = component.name
-                component_metrics['begin'] = component.lineno
-                component_metrics['end'] = component.endline
+                component_type = None
+                component_classname = 'undefined'
                 if type(component) == Function:
-                    component_metrics['type'] = 'function'
-                    component_metrics['classname'] = component.classname
+                    component_type = 'function'
+                    if component.classname:
+                        component_classname = component.classname
                 elif type(component) == Class:
-                    component_metrics['type'] = 'class'
-                    component_metrics['classname'] = None
-                component_metrics['complexity'] = component.complexity
+                    component_type = 'class'
+                    component_classname = 'undefined'
+
+                component_name = component.name
+                component_begin = component.lineno
+                component_end = component.endline
+                component_complexity = component.complexity
 
                 component_code = '\n'.join(lines[component.lineno-1:component.endline])
-                
                 raw_metrics_module = analyze(component_code)
-                raw_metrics = {
-                    'loc': raw_metrics_module.loc,
-                    'lloc': raw_metrics_module.lloc,
-                    'comments': raw_metrics_module.comments,
-                    'multi': raw_metrics_module.multi,
-                    'blank': raw_metrics_module.blank,
-                    'single_comments': raw_metrics_module.single_comments
-                }
-                component_metrics['raw_metrics'] = raw_metrics
-
-                structure['components'].append(component_metrics)
-
-            return structure
+                raw_metrics = RawMetricsModel(
+                    loc=raw_metrics_module.loc,
+                    lloc=raw_metrics_module.lloc,
+                    comments=raw_metrics_module.comments,
+                    multi=raw_metrics_module.multi,
+                    blank=raw_metrics_module.blank,
+                    single_comments=raw_metrics_module.single_comments
+                )
+                component_raw_metrics = raw_metrics
+                
+                component_metrics = ComponentModel(
+                    type=component_type,
+                    name=component_name,
+                    begin=component_begin,
+                    end=component_end,
+                    classname=component_classname,
+                    complexity=component_complexity,
+                    raw_metrics=component_raw_metrics
+                )
+                file_structure.components.append(component_metrics)
+            print('Finished')
+            return file_structure
         except:
             logging.error(f'Not processable file: {path} for repository {name} with id {id} and clone url {clone_url}')
             return False
 
     try:
         root = f'{REPOSITORIES}/{id}'
-        files = glob.glob(os.path.join(root, "**/*.*"), recursive=True)
-        repository_metrics = {
-            'repository_id': id,
-            'name': name,
-            'clone_url': clone_url,
-            'files': []
-        }
+
+        c_files = glob.glob(os.path.join(root, "**/*.c"), recursive=True)
+        cpp_files = glob.glob(os.path.join(root, "**/*.cpp"), recursive=True)
+        java_files = glob.glob(os.path.join(root, "**/*.java"), recursive=True)
+        cs_files = glob.glob(os.path.join(root, "**/*.cs"), recursive=True)
+        js_files = glob.glob(os.path.join(root, "**/*.js"), recursive=True)
+        ts_files = glob.glob(os.path.join(root, "**/*.ts"), recursive=True)
+        swift_files = glob.glob(os.path.join(root, "**/*.swift"), recursive=True)
+        py_files = glob.glob(os.path.join(root, "**/*.py"), recursive=True)
+        rb_files = glob.glob(os.path.join(root, "**/*.rb"), recursive=True)
+        php_files = glob.glob(os.path.join(root, "**/*.php"), recursive=True)
+        scala_files = glob.glob(os.path.join(root, "**/*.scala"), recursive=True)
+        go_files = glob.glob(os.path.join(root, "**/*.go"), recursive=True)
+        lua_files = glob.glob(os.path.join(root, "**/*.lua"), recursive=True)
+        rs_files = glob.glob(os.path.join(root, "**/*.rs"), recursive=True)
+        kt_files = glob.glob(os.path.join(root, "**/*.kt"), recursive=True)
+
+        files = c_files + cpp_files + java_files + cs_files + js_files + ts_files + swift_files + py_files + rb_files + php_files + scala_files + go_files + lua_files + rs_files + kt_files
+
+        repository_metrics = RepositoryModel(
+            repository_id=id,
+            name=name,
+            clone_url=clone_url,
+            files=[]
+        )
+
         for filename in files:
             with open(filename, 'r') as f:
                 try:
                     relative_path = filename[len(root)+1:]
                     code = f.read()
-                    file_metrics = create_structure(relative_path, code)
+                    logging.info(f'Processing file: {relative_path} for repository {name} with id {id} and clone url {clone_url}')
+                    file_metrics = run_with_timeout(create_structure, (relative_path, code))
                     if file_metrics:
-                        repository_metrics['files'].append(file_metrics)
+                        repository_metrics.files.append(file_metrics)
+                    logging.info(f'Processed file: {relative_path} for repository {name} with id {id} and clone url {clone_url}')
                 except:
                     logging.error(f'Not readable file: {relative_path} for repository {name} with id {id} and clone url {clone_url}')
-        
-        logging.info(f'Metrics:\n {repository_metrics}')
+                    pass
+                
+        logging.info(f'Metrics from analyzer:\n{repository_metrics}')
         return repository_metrics
     except Exception as e:
         logging.error(f'Error analyzing repository {name}: {e}')
+        raise
         return None
+
+def delete_git_history(id: int):
+    try:
+        subprocess.run(['rm', '-rf', f'{REPOSITORIES}/{id}/.git'])
+        return True
+    except:
+        return False
 
 def delete_repository(id: int):
     try:
@@ -128,7 +192,7 @@ def analyzing(repository_id: int, name: str, clone_url: str):
     metrics = analyze_repository(repository_id, name, clone_url)
     if metrics:
         logging.info(f'Repository {repository_id} analyzed')
-        updating.delay(metrics)
+        updating.delay(metrics.dict())
     else:
         logging.error(f'Failed to analyze repository {repository_id}')
     deleted = delete_repository(repository_id)

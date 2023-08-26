@@ -17,8 +17,8 @@ import multiprocessing
 logging.basicConfig(level=logging.INFO)
 
 REDIS = os.environ.get("REDIS_CONNECTION")
-# REPOSITORIES = os.environ.get('REPOSITORIES_PATH')
-REPOSITORIES = 'repositories/example'
+REPOSITORIES = os.environ.get('REPOSITORIES_PATH')
+# REPOSITORIES = 'repositories/example'
 app = Celery('analyzing-worker', broker=REDIS)
 
 def analyze_repository(id: int, name: str, clone_url: str):
@@ -126,24 +126,7 @@ def analyze_repository(id: int, name: str, clone_url: str):
 
     try:
         root = f'{REPOSITORIES}/{id}'
-
-        c_files = glob.glob(os.path.join(root, "**/*.c"), recursive=True)
-        cpp_files = glob.glob(os.path.join(root, "**/*.cpp"), recursive=True)
-        java_files = glob.glob(os.path.join(root, "**/*.java"), recursive=True)
-        cs_files = glob.glob(os.path.join(root, "**/*.cs"), recursive=True)
-        js_files = glob.glob(os.path.join(root, "**/*.js"), recursive=True)
-        ts_files = glob.glob(os.path.join(root, "**/*.ts"), recursive=True)
-        swift_files = glob.glob(os.path.join(root, "**/*.swift"), recursive=True)
-        py_files = glob.glob(os.path.join(root, "**/*.py"), recursive=True)
-        rb_files = glob.glob(os.path.join(root, "**/*.rb"), recursive=True)
-        php_files = glob.glob(os.path.join(root, "**/*.php"), recursive=True)
-        scala_files = glob.glob(os.path.join(root, "**/*.scala"), recursive=True)
-        go_files = glob.glob(os.path.join(root, "**/*.go"), recursive=True)
-        lua_files = glob.glob(os.path.join(root, "**/*.lua"), recursive=True)
-        rs_files = glob.glob(os.path.join(root, "**/*.rs"), recursive=True)
-        kt_files = glob.glob(os.path.join(root, "**/*.kt"), recursive=True)
-
-        files = c_files + cpp_files + java_files + cs_files + js_files + ts_files + swift_files + py_files + rb_files + php_files + scala_files + go_files + lua_files + rs_files + kt_files
+        files = glob.glob(os.path.join(root, "**/*.py"), recursive=True)
 
         repository_metrics = RepositoryModel(
             repository_id=id,

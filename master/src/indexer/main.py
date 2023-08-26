@@ -15,7 +15,7 @@ database: IndexingClient = PostgresIndexingClient()
 def get_next_github_metadata_batch():
     page = database.get_page()
     logging.info(f'Downloading github repositories matadata from page: {page}')
-    params = {'q': 'stars:>0', 'sort': 'stars', 'order': 'desc', 'per_page': 3, 'page': page}
+    params = {'q': 'language:python', 'sort': 'stars', 'order': 'desc', 'per_page': 3, 'page': page}
     metadata_batch_response = requests.get(f'{GITHUB_API}/search/repositories', params=params)
     logging.info(f'Downloading status code: {metadata_batch_response.status_code}')
     

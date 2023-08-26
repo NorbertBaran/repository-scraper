@@ -5,6 +5,8 @@ from fastapi.responses import JSONResponse
 from fastapi import status
 import logging
 
+logging.basicConfig(level=logging.INFO)
+
 app = FastAPI()
 database: ApiClient = PostgresApiClient()
 

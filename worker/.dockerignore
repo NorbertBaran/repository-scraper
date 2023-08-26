@@ -1,8 +1,5 @@
-# All
 **/__pycache__
 **/*.pyc
 **/venv
 **/build
-
-# Worker
-worker/repositories/
+repositories/

@@ -3,7 +3,7 @@ import time
 from src.database.shemas import *
 from src.database.engine import engine, Base
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logging.info("Creating database schema")
 
 connected = False

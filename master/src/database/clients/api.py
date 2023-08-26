@@ -20,6 +20,8 @@ class PostgresApiClient(ApiClient):
             session.close()
             return None
         metadata_model = MetadataModel(repository_id=metadata.repository_id, name=metadata.name, clone_url=metadata.clone_url)
+        session.delete(metadata)
+        session.commit()
         session.close()
         return metadata_model
 
@@ -54,10 +56,11 @@ class PostgresApiClient(ApiClient):
             repository.files.append(file)
         session.add(repository)
 
-        metadata = session.query(Metadata).filter_by(repository_id=repository_model.repository_id).first()
-        session.delete(metadata)
+        # metadata = session.query(Metadata).filter_by(repository_id=repository_model.repository_id).first()
+        # session.delete(metadata)
 
         session.commit()
+        session.close()
 
 
             

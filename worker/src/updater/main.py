@@ -3,10 +3,10 @@ import os
 from celery import Celery
 import requests
 
-WORKER_BROKER = os.environ.get("WORKER_BROKER")
+REDIS = os.environ.get("REDIS_CONNECTION")
 MASTER = os.environ.get("MASTER")
 
-app = Celery('updating-worker', broker=WORKER_BROKER)
+app = Celery('updating-worker', broker=REDIS)
 
 def save_repository_metrics(metrics):
     response = requests.post(f'{MASTER}/repository', json=metrics)

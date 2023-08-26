@@ -10,9 +10,9 @@ from radon.complexity import cc_visit
 from radon.raw import analyze
 from radon.metrics import h_visit, mi_visit
 
-WORKER_BROKER = os.environ.get("WORKER_BROKER")
+REDIS = os.environ.get("REDIS_CONNECTION")
 REPOSITORIES = os.environ.get('REPOSITORIES')
-app = Celery('analyzing-worker', broker=WORKER_BROKER)
+app = Celery('analyzing-worker', broker=REDIS)
 
 def analyze_repository(id: int, name: str, clone_url: str):
     def create_structure(path: str, code:str):

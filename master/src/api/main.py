@@ -17,10 +17,10 @@ def get_metadata():
     except:
         return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content={"message": "Failed to fetch metadata"})
 
-@app.post('/metrics', status_code=201)
-def post_metrics(repository: RepositoryModel):
+@app.post('/metric', status_code=201)
+def post_metric(repository: RepositoryModel):
     try:
-        database.post_metrics(repository)
+        database.post_metric(repository)
         return {"message": "Repository metrics saved successfully"}
     except:
         return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content={"message": "Failed to save repository metrics"})

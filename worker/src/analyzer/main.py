@@ -11,7 +11,7 @@ from radon.raw import analyze
 from radon.metrics import h_visit, mi_visit
 
 REDIS = os.environ.get("REDIS_CONNECTION")
-REPOSITORIES = os.environ.get('REPOSITORIES')
+REPOSITORIES = os.environ.get('REPOSITORIES_PATH')
 app = Celery('analyzing-worker', broker=REDIS)
 
 def analyze_repository(id: int, name: str, clone_url: str):
@@ -86,8 +86,9 @@ def analyze_repository(id: int, name: str, clone_url: str):
 
     try:
         root = f'{REPOSITORIES}/{id}'
+        logging.info(f'Analyzing repository from {root}')
         files = glob.glob(os.path.join(root, "**/*.*"), recursive=True)
-        logging.info(files)
+        logging.info(f'Files:\n {files}')
         repository_metrics = {
             'repository_id': id,
             'name': name,

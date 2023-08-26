@@ -28,7 +28,7 @@ def get_next_github_metadata_batch():
     selected_metadata_list = [MetadataModel(
         repository_id= metadata['id'],
         name=metadata['name'],
-        url=metadata['clone_url']
+        clone_url=metadata['clone_url']
         ) for metadata in metadata_batch['items']]
 
     logging.info(f'Downloaded github repositories matadata from page: {page}')

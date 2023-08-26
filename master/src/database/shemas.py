@@ -12,7 +12,7 @@ class Metadata(Base):
     id = Column(Integer, primary_key=True)
     repository_id = Column(Integer)
     name = Column(String)
-    url = Column(String)
+    clone_url = Column(String)
 
 class RawMetrics(Base):
     __tablename__ = 'raw_metrics'

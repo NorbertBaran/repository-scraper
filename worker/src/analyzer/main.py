@@ -85,9 +85,9 @@ def analyze_repository(id: int, name: str, clone_url: str):
         return structure
 
     try:
-        root = f'{REPOSITORIES}/{id}'
+        root = f'/{REPOSITORIES}/{id}'
         files = glob.glob(os.path.join(root, "**/*.*"), recursive=True)
-        
+        logging.info(files)
         repository_metrics = {
             'repository_id': id,
             'name': name,

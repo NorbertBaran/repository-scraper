@@ -3,7 +3,7 @@ from pydantic import BaseModel
 class MetadataModel(BaseModel):
     repository_id: int
     name: str
-    url: str
+    clone_url: str
 
 class RawMetricsModel(BaseModel):
     loc: int

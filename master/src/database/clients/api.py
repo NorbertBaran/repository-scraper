@@ -19,7 +19,7 @@ class PostgresApiClient(ApiClient):
         if not metadata:
             session.close()
             return None
-        metadata_model = MetadataModel(repository_id=metadata.repository_id, name=metadata.name, url=metadata.url)
+        metadata_model = MetadataModel(repository_id=metadata.repository_id, name=metadata.name, clone_url=metadata.clone_url)
         session.close()
         return metadata_model
 

@@ -3,6 +3,7 @@ from src.database.models import MetadataModel, RepositoryModel
 from src.database.clients.api import ApiClient, PostgresApiClient
 from fastapi.responses import JSONResponse
 from fastapi import status
+import logging
 
 app = FastAPI()
 database: ApiClient = PostgresApiClient()
@@ -20,6 +21,7 @@ def get_metadata():
 @app.post('/metric', status_code=201)
 def post_metric(repository: RepositoryModel):
     try:
+        logging.info(f'Repository:\n{repository.dict()}')
         database.post_metric(repository)
         return {"message": "Repository metrics saved successfully"}
     except:

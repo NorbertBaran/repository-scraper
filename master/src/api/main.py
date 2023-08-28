@@ -23,9 +23,7 @@ def get_metadata():
 @app.post('/metric', status_code=201)
 def post_metric(repository: RepositoryModel):
     try:
-        logging.info(f'Repository:\n{repository.dict()}')
         database.post_metric(repository)
         return {"message": "Repository metrics saved successfully"}
     except:
-        raise
         return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content={"message": "Failed to save repository metrics"})

@@ -43,6 +43,8 @@ services:
     depends_on:
       - redis
       - postgres
+    env_file:
+      - .env
 
 networks:
   repository-scraper:

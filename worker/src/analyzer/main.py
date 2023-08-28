@@ -2,6 +2,7 @@ import logging
 import os
 import subprocess
 from celery import Celery
+from celery.exceptions import SoftTimeLimitExceeded
 from src.updater.main import updating
 
 import glob
@@ -14,12 +15,14 @@ from src.models import *
 
 import multiprocessing
 
-logging.basicConfig(level=logging.INFO)
-
 REDIS = os.environ.get("REDIS_CONNECTION")
 REPOSITORIES = os.environ.get('REPOSITORIES_PATH')
 # REPOSITORIES = 'repositories/example'
 app = Celery('analyzing-worker', broker=REDIS)
+
+# history_logger = logging.getLogger('history')
+# history_handler = logging.FileHandler('history.log')
+# history_logger.addHandler(history_logger)
 
 def analyze_repository(id: int, name: str, clone_url: str):
 
@@ -144,12 +147,10 @@ def analyze_repository(id: int, name: str, clone_url: str):
                 except:
                     # logging.error(f'Not readable file: {relative_path} for repository {name} with id {id} and clone url {clone_url}')
                     pass
-                
-        # logging.info(f'Metrics from analyzer:\n{repository_metrics}')
+
         return repository_metrics
     except Exception as e:
         logging.error(f'Error analyzing repository {name}: {e}')
-        raise
         return None
 
 def delete_git_history(id: int):
@@ -166,18 +167,24 @@ def delete_repository(id: int):
     except:
         return False
 
-@app.task(queue='analyzing-queue')
+@app.task(queue='analyzing-queue', soft_time_limit=30)
 def analyzing(repository_id: int, name: str, clone_url: str):
-    metrics = analyze_repository(repository_id, name, clone_url)
-    if metrics:
-        logging.info(f'Repository {repository_id} analyzed')
-        # updating.delay(metrics.dict())
-        updating(metrics.dict())
-    else:
-        logging.error(f'Failed to analyze repository {repository_id}')
-    deleted = delete_repository(repository_id)
-    if deleted:
-        logging.info(f'Repository {repository_id} deleted after analysis')
-    else:
-        logging.error(f'Failed to delete repository {repository_id}')
+    try:
+        metrics = analyze_repository(repository_id, name, clone_url)
+        if metrics:
+            logging.info(f'Repository {repository_id} analyzed')
+            # history_logger.info(f'repository_id: {repository_id}, name: {name}, clone_url: {clone_url}, status: accepted')
+            updating.delay(metrics.dict())
+        else:
+            logging.error(f'Failed to analyze repository {repository_id}')
+            # history_logger.info(f'repository_id: {repository_id}, name: {name}, clone_url: {clone_url}, status: rejected')
+    except:
+        logging.error(f'Time limit exceeded while analyzing repository {repository_id}')
+        # history_logger.info(f'repository_id: {repository_id}, name: {name}, clone_url: {clone_url}, status: rejected')
+    finally:
+        deleted = delete_repository(repository_id)
+        if deleted:
+            logging.info(f'Repository {repository_id} deleted')
+        else:
+            logging.error(f'Failed to delete repository {repository_id}')
     

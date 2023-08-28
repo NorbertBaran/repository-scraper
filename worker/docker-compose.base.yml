@@ -17,3 +17,6 @@ services:
       - repository-scraper
     depends_on:
       - redis
+    env_file:
+      - .env
+    cpus: 0.5

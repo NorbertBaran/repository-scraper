@@ -26,41 +26,63 @@ class PostgresApiClient(ApiClient):
         return metadata_model
 
     def post_metric(self, repository_model: RepositoryModel):
+        # Create a new session
         session = Session()
-        repository = Repository(repository_id = repository_model.repository_id, name = repository_model.name, clone_url = repository_model.clone_url)
-        
-        file_models: list[FileModel] = repository_model.files
-        for file_model in file_models:
-            global_raw_metrics = RawMetrics(loc = file_model.raw_metrics.loc, lloc = file_model.raw_metrics.lloc, comments = file_model.raw_metrics.comments, multi = file_model.raw_metrics.multi, blank = file_model.raw_metrics.blank, single_comments = file_model.raw_metrics.single_comments)
-            session.add(global_raw_metrics)
 
-            global_haltest_metrics = HaltestMetrics(h1 = file_model.haltest_metrics.h1, n1 = file_model.haltest_metrics.n1, n2 = file_model.haltest_metrics.n2, vocabulary = file_model.haltest_metrics.vocabulary, calculated_length = file_model.haltest_metrics.calculated_length, volume = file_model.haltest_metrics.validate, difficulty = file_model.haltest_metrics.difficulty, effort = file_model.haltest_metrics.effort, time = file_model.haltest_metrics.time, bugs = file_model.haltest_metrics.bugs)
-            session.add(global_haltest_metrics)
+        try:
+            # Create Metadata instance
+            repository = Repository(
+                repository_id=repository_model.repository_id,
+                name=repository_model.name,
+                clone_url=repository_model.clone_url,
+            )
+            session.add(repository)
+            session.commit()
 
-            file = File(path = file_model.path, score = file_model.score)
-            file.raw_metrics = global_raw_metrics
-            file.haltest_metrics = global_haltest_metrics
-            
-            component_models: list[ComponentModel] = file_model.components
-            for component_model in component_models:
-                component_raw_metrics = RawMetrics(loc = file_model.raw_metrics.loc, lloc = file_model.raw_metrics.lloc, comments = file_model.raw_metrics.comments, multi = file_model.raw_metrics.multi, blank = file_model.raw_metrics.blank, single_comments = file_model.raw_metrics.single_comments)
-                session.add(component_raw_metrics)
-                
-                component = Component(type = component_model.type , name = component_model.name, begin = component_model.begin, end = component_model.end, classname = component_model.classname)
-                component.raw_metrics = component_raw_metrics
-                session.add(component)
-                
-                file.components.append(component)
-            session.add(file)
+            for file_model in repository_model.files:
+                # Create RawMetrics instance
+                raw_metrics = RawMetrics(**file_model.raw_metrics.dict())
+                session.add(raw_metrics)
+                session.commit()
 
-            repository.files.append(file)
-        session.add(repository)
+                # Create HaltestMetrics instance
+                haltest_metrics = HaltestMetrics(**file_model.haltest_metrics.dict())
+                session.add(haltest_metrics)
+                session.commit()
 
-        # metadata = session.query(Metadata).filter_by(repository_id=repository_model.repository_id).first()
-        # session.delete(metadata)
+                # Create File instance
+                file = File(
+                    path=file_model.path,
+                    score=file_model.score,
+                    repository_id=repository.id,
+                    raw_metrics_id=raw_metrics.id,
+                    haltest_metrics_id=haltest_metrics.id,
+                )
+                session.add(file)
+                session.commit()
 
-        session.commit()
-        session.close()
+                for component_model in file_model.components:
+                    # Create Component instance
+                    component = Component(
+                        type=component_model.type,
+                        name=component_model.name,
+                        begin=component_model.begin,
+                        end=component_model.end,
+                        classname=component_model.classname,
+                        complexity=component_model.complexity,
+                        file_id=file.id,
+                        raw_metrics_id=raw_metrics.id,
+                    )
+                    session.add(component)
+
+            session.commit()
+
+        except Exception as e:
+            session.rollback()
+            raise e
+
+        finally:
+            session.close()
 
 
             

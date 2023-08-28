@@ -34,7 +34,8 @@ def downloading():
         cloned = clone_repository(repository_id, clone_url)
         if cloned:
             logging.info(f'Repository {repository_id} cloned successfully')
-            analyzing.delay(repository_id, name, clone_url)
+            # analyzing.delay(repository_id, name, clone_url)
+            analyzing(repository_id, name, clone_url)
         else:
             logging.error(f'Failed to clone repository {repository_id}')
     else:

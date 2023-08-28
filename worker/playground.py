@@ -10,5 +10,8 @@ from src.analyzer.main import analyze_repository
 # print()
 # print(result5)
 
-result6 = analyze_repository(6, "Repo 6", "example.repo6")
-print(result6)
+# result6 = analyze_repository(6, "Repo 6", "example.repo6")
+# print(result6)
+
+result7 = analyze_repository(7, "Repo 7", "example.repo7")
+# print(result7)

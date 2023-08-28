@@ -48,6 +48,7 @@ class Component(Base):
     begin = Column(Integer)
     end = Column(Integer)
     classname = Column(String)
+    complexity = Column(Integer)
     file_id = Column(Integer, ForeignKey('files.id'))
     raw_metrics_id = Column(Integer, ForeignKey('raw_metrics.id'))
     

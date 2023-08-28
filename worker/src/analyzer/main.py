@@ -42,7 +42,6 @@ def analyze_repository(id: int, name: str, clone_url: str):
 
     def create_structure(path: str, code:str):
         try:
-            print('Analyzing')
             global_raw_metrics_module = analyze(code)
             global_raw_metrics = RawMetricsModel(
                 loc=global_raw_metrics_module.loc,
@@ -52,7 +51,6 @@ def analyze_repository(id: int, name: str, clone_url: str):
                 blank=global_raw_metrics_module.blank,
                 single_comments=global_raw_metrics_module.single_comments
             )
-            print('H visiting')
             global_haltest_metrics_module = h_visit(code)
             global_haltest_metrics = HaltestMetricsModel(
                 h1=global_haltest_metrics_module.total.h1,
@@ -76,10 +74,8 @@ def analyze_repository(id: int, name: str, clone_url: str):
                 haltest_metrics=global_haltest_metrics,
                 components=[]
             )
-            print('CC visiting')
             visit = cc_visit(code)
             lines = code.split('\n')
-            print('Component visiting')
             for component in visit:
                 component_type = None
                 component_classname = 'undefined'
@@ -118,10 +114,10 @@ def analyze_repository(id: int, name: str, clone_url: str):
                     raw_metrics=component_raw_metrics
                 )
                 file_structure.components.append(component_metrics)
-            print('Finished')
+            
             return file_structure
         except:
-            logging.error(f'Not processable file: {path} for repository {name} with id {id} and clone url {clone_url}')
+            # logging.error(f'Not processable file: {path} for repository {name} with id {id} and clone url {clone_url}')
             return False
 
     try:
@@ -134,22 +130,22 @@ def analyze_repository(id: int, name: str, clone_url: str):
             clone_url=clone_url,
             files=[]
         )
-
         for filename in files:
             with open(filename, 'r') as f:
                 try:
                     relative_path = filename[len(root)+1:]
                     code = f.read()
-                    logging.info(f'Processing file: {relative_path} for repository {name} with id {id} and clone url {clone_url}')
-                    file_metrics = run_with_timeout(create_structure, (relative_path, code))
+                    # logging.info(f'Processing file: {relative_path} for repository {name} with id {id} and clone url {clone_url}')
+                    # file_metrics = run_with_timeout(create_structure, (relative_path, code))
+                    file_metrics = create_structure(relative_path, code)
                     if file_metrics:
                         repository_metrics.files.append(file_metrics)
-                    logging.info(f'Processed file: {relative_path} for repository {name} with id {id} and clone url {clone_url}')
+                    # logging.info(f'Processed file: {relative_path} for repository {name} with id {id} and clone url {clone_url}')
                 except:
-                    logging.error(f'Not readable file: {relative_path} for repository {name} with id {id} and clone url {clone_url}')
+                    # logging.error(f'Not readable file: {relative_path} for repository {name} with id {id} and clone url {clone_url}')
                     pass
                 
-        logging.info(f'Metrics from analyzer:\n{repository_metrics}')
+        # logging.info(f'Metrics from analyzer:\n{repository_metrics}')
         return repository_metrics
     except Exception as e:
         logging.error(f'Error analyzing repository {name}: {e}')
@@ -175,7 +171,8 @@ def analyzing(repository_id: int, name: str, clone_url: str):
     metrics = analyze_repository(repository_id, name, clone_url)
     if metrics:
         logging.info(f'Repository {repository_id} analyzed')
-        updating.delay(metrics.dict())
+        # updating.delay(metrics.dict())
+        updating(metrics.dict())
     else:
         logging.error(f'Failed to analyze repository {repository_id}')
     deleted = delete_repository(repository_id)

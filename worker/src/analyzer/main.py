@@ -2,7 +2,6 @@ import logging
 import os
 import subprocess
 from celery import Celery
-from celery.exceptions import SoftTimeLimitExceeded
 from src.updater.main import updating
 
 import glob
@@ -13,35 +12,23 @@ from radon.metrics import h_visit, mi_visit
 
 from src.models import *
 
-import multiprocessing
-
 REDIS = os.environ.get("REDIS_CONNECTION")
 REPOSITORIES = os.environ.get('REPOSITORIES_PATH')
-# REPOSITORIES = 'repositories/example'
 app = Celery('analyzing-worker', broker=REDIS)
 
-# history_logger = logging.getLogger('history')
-# history_handler = logging.FileHandler('history.log')
-# history_logger.addHandler(history_logger)
+analyze_logger = logging.getLogger('analyzed-repositories')
+analyze_handler = logging.FileHandler('/logs/analyzed-repositories.log')
+analyze_logger.addHandler(analyze_handler)
+
+processed_file_logger = logging.getLogger('processed-file-logger')
+processable_file_handler = logging.FileHandler('/logs/processed-files.log')
+processed_file_logger.addHandler(processable_file_handler)
+
+# not_processed_file_logger = logging.getLogger('not-processed-file-logger')
+# not_processable_file_handler = logging.FileHandler('/logs/not-processed-files.log')
+# not_processed_file_logger.addHandler(not_processable_file_handler)
 
 def analyze_repository(id: int, name: str, clone_url: str):
-
-    def run_with_timeout(func, args=(), timeout=0.1):
-        manager = multiprocessing.Manager()
-        result = manager.list()
-        
-        def worker():
-            result.append(func(*args))
-        
-        process = multiprocessing.Process(target=worker)
-        process.start()
-        process.join(timeout)
-        
-        if process.is_alive():
-            process.terminate()
-            return None
-        else:
-            return result[0]
 
     def create_structure(path: str, code:str):
         try:
@@ -118,9 +105,11 @@ def analyze_repository(id: int, name: str, clone_url: str):
                 )
                 file_structure.components.append(component_metrics)
             
+            processed_file_logger.info(f'repository_id: {id}, name {name}, clone_url {clone_url}, path: {path}')
             return file_structure
         except:
             # logging.error(f'Not processable file: {path} for repository {name} with id {id} and clone url {clone_url}')
+            # not_processed_file_logger.info(f'repository_id: {id}, name {name}, clone_url {clone_url}, path: {path}')
             return False
 
     try:
@@ -173,14 +162,12 @@ def analyzing(repository_id: int, name: str, clone_url: str):
         metrics = analyze_repository(repository_id, name, clone_url)
         if metrics:
             logging.info(f'Repository {repository_id} analyzed')
-            # history_logger.info(f'repository_id: {repository_id}, name: {name}, clone_url: {clone_url}, status: accepted')
+            analyze_logger.info(f'repository_id: {repository_id}, name: {name}, clone_url: {clone_url}')
             updating.delay(metrics.dict())
         else:
             logging.error(f'Failed to analyze repository {repository_id}')
-            # history_logger.info(f'repository_id: {repository_id}, name: {name}, clone_url: {clone_url}, status: rejected')
     except:
         logging.error(f'Time limit exceeded while analyzing repository {repository_id}')
-        # history_logger.info(f'repository_id: {repository_id}, name: {name}, clone_url: {clone_url}, status: rejected')
     finally:
         deleted = delete_repository(repository_id)
         if deleted:

@@ -12,6 +12,14 @@ REPOSITORIES = os.environ.get('REPOSITORIES_PATH')
 MAX_DOWNLOADED_REPOSITORIES = os.environ.get('MAX_DOWNLOADED_REPOSITORIES')
 app = Celery('downloading-worker', broker=REDIS)
 
+download_logger = logging.getLogger('downloaded-repositories')
+download_handler = logging.FileHandler('/logs/downloaded-repositories.log')
+download_logger.addHandler(download_handler)
+
+clone_logger = logging.getLogger('cloning-status')
+clone_handler = logging.FileHandler('/logs/cloning-status.log')
+clone_logger.addHandler(clone_handler)
+
 def get_repository_metadata():
     response = requests.get(f'{MASTER}/metadata')
     if response.status_code == 200:
@@ -22,8 +30,10 @@ def get_repository_metadata():
 def clone_repository(id: int, url: str):
     try:
         subprocess.run(['git', 'clone', url, f'{REPOSITORIES}/{id}'])
+        clone_logger.info(f'Cloned: {len(os.listdir(REPOSITORIES))}')
         while len(os.listdir(REPOSITORIES)) >= int(MAX_DOWNLOADED_REPOSITORIES):
             logging.info(f'Waiting for process downloaded repositories before dowlnoading more...')
+            clone_logger.info('Waiting for process downloaded repositories before dowlnoading more...')
             time.sleep(10)
         return True
     except:
@@ -38,6 +48,7 @@ def downloading():
         cloned = clone_repository(repository_id, clone_url)
         if cloned:
             logging.info(f'Repository {repository_id} cloned successfully')
+            download_logger.info(f'repository_id: {repository_id}, name: {name}, clone_url: {clone_url}')
             analyzing.delay(repository_id, name, clone_url)
         else:
             logging.error(f'Failed to clone repository {repository_id}')

@@ -5,6 +5,6 @@ down:
 rmi:
 	docker compose down --rmi all
 rmv:
-	docker volume rm repository-scraping-redis-volume
+	docker volume rm repository-scraping-redis-volume repository-scraping-worker-logs-volume
 rma:
 	make rmi rmv

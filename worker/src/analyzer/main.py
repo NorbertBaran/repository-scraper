@@ -2,6 +2,7 @@ import logging
 import os
 import subprocess
 from celery import Celery
+from celery.exceptions import SoftTimeLimitExceeded
 from src.updater.main import updating
 
 import glob
@@ -11,6 +12,8 @@ from radon.raw import analyze
 from radon.metrics import h_visit, mi_visit
 
 from src.models import *
+
+import time
 
 REDIS = os.environ.get("REDIS_CONNECTION")
 REPOSITORIES = os.environ.get('REPOSITORIES_PATH')
@@ -24,9 +27,9 @@ processed_file_logger = logging.getLogger('processed-file-logger')
 processable_file_handler = logging.FileHandler('/logs/processed-files.log')
 processed_file_logger.addHandler(processable_file_handler)
 
-timeout_logger = logging.getLogger('timeout-repositories')
-timeout_handler = logging.FileHandler('/logs/tiemout-repositories.log')
-timeout_logger.addHandler(timeout_handler)
+exceptional_repository_logger = logging.getLogger('exceptional-repositories')
+exceptional_repository_handler = logging.FileHandler('/logs/exceptional-repositories.log')
+exceptional_repository_logger.addHandler(exceptional_repository_handler)
 
 def analyze_repository(id: int, name: str, clone_url: str):
 
@@ -140,14 +143,8 @@ def analyze_repository(id: int, name: str, clone_url: str):
         return repository_metrics
     except Exception as e:
         logging.error(f'Error analyzing repository {name}: {e}')
+        exceptional_repository_logger.info(f'repository_id: {id}, name: {name}, clone_url: {clone_url}')
         return None
-
-def delete_git_history(id: int):
-    try:
-        subprocess.run(['rm', '-rf', f'{REPOSITORIES}/{id}/.git'])
-        return True
-    except:
-        return False
 
 def delete_repository(id: int):
     try:
@@ -156,7 +153,7 @@ def delete_repository(id: int):
     except:
         return False
 
-@app.task(queue='analyzing-queue', soft_time_limit=30)
+@app.task(queue='analyzing-queue', soft_time_limit=2)
 def analyzing(repository_id: int, name: str, clone_url: str):
     try:
         metrics = analyze_repository(repository_id, name, clone_url)
@@ -167,8 +164,8 @@ def analyzing(repository_id: int, name: str, clone_url: str):
         else:
             logging.error(f'Failed to analyze repository {repository_id}')
     except:
-        logging.error(f'Time limit exceeded while analyzing repository {repository_id}')
-        timeout_logger.info(f'repository_id: {repository_id}, name: {name}, clone_url: {clone_url}')
+        logging.error(f'Error analyzing repository {repository_id}')
+        exceptional_repository_logger.info(f'repository_id: {repository_id}, name: {name}, clone_url: {clone_url}')
     finally:
         deleted = delete_repository(repository_id)
         if deleted:

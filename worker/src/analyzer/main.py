@@ -142,6 +142,7 @@ def analyze_repository(id: int, name: str, clone_url: str):
 
         return repository_metrics
     except Exception as e:
+        raise
         logging.error(f'Error analyzing repository {name}: {e}')
         exceptional_repository_logger.info(f'repository_id: {id}, name: {name}, clone_url: {clone_url}')
         return None

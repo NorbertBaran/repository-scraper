@@ -1,8 +1,11 @@
 import logging
 import os
 import subprocess
+import traceback
 from celery import Celery
-from celery.exceptions import SoftTimeLimitExceeded
+# from celery.exceptions import SoftTimeLimitExceeded
+from billiard.exceptions import SoftTimeLimitExceeded
+from pydantic_core._pydantic_core import ValidationError
 from src.updater.main import updating
 
 import glob
@@ -45,6 +48,7 @@ def analyze_repository(id: int, name: str, clone_url: str):
                 single_comments=global_raw_metrics_module.single_comments
             )
             global_haltest_metrics_module = h_visit(code)
+
             global_haltest_metrics = HaltestMetricsModel(
                 h1=global_haltest_metrics_module.total.h1,
                 h2=global_haltest_metrics_module.total.h2,
@@ -108,9 +112,16 @@ def analyze_repository(id: int, name: str, clone_url: str):
                 )
                 file_structure.components.append(component_metrics)
             
-            processed_file_logger.info(f'repository_id: {id}, name {name}, clone_url {clone_url}, path: {path}')
+            # processed_file_logger.info(f'repository_id: {id}, name {name}, clone_url {clone_url}, path: {path}')
             return file_structure
-        except:
+        except Exception as e:
+            if type(e) == SoftTimeLimitExceeded:
+                raise e
+            if type(e) != SyntaxError:
+                logging.error(f'Error for analyzing {name} repository structure for path {path}: {e}')
+                logging.error(f'Error type: {type(e)}')
+                logging.error(f'Error message:{e}')
+                logging.error(f'Error stracktrace: {traceback.format_exc()}')
             # logging.error(f'Not processable file: {path} for repository {name} with id {id} and clone url {clone_url}')
             # not_processed_file_logger.info(f'repository_id: {id}, name {name}, clone_url {clone_url}, path: {path}')
             return False
@@ -136,14 +147,19 @@ def analyze_repository(id: int, name: str, clone_url: str):
                     if file_metrics:
                         repository_metrics.files.append(file_metrics)
                     # logging.info(f'Processed file: {relative_path} for repository {name} with id {id} and clone url {clone_url}')
-                except:
+                except Exception as e:
+                    if type(e) == SoftTimeLimitExceeded:
+                        raise e
+                    logging.error(f'Error during walking through {name} repository file {relative_path}: {e}')
+                    logging.error(f'Error type: {type(e)}')
                     # logging.error(f'Not readable file: {relative_path} for repository {name} with id {id} and clone url {clone_url}')
-                    pass
 
         return repository_metrics
     except Exception as e:
-        raise
-        logging.error(f'Error analyzing repository {name}: {e}')
+        if type(e) == SoftTimeLimitExceeded:
+            raise e
+        logging.error(f'Error analyzing {name} repository: {e}')
+        logging.error(f'Error type: {type(e)}')
         exceptional_repository_logger.info(f'repository_id: {id}, name: {name}, clone_url: {clone_url}')
         return None
 
@@ -154,7 +170,7 @@ def delete_repository(id: int):
     except:
         return False
 
-@app.task(queue='analyzing-queue', soft_time_limit=2)
+@app.task(queue='analyzing-queue', soft_time_limit=15)
 def analyzing(repository_id: int, name: str, clone_url: str):
     try:
         metrics = analyze_repository(repository_id, name, clone_url)
@@ -164,8 +180,9 @@ def analyzing(repository_id: int, name: str, clone_url: str):
             updating.delay(metrics.dict())
         else:
             logging.error(f'Failed to analyze repository {repository_id}')
-    except:
-        logging.error(f'Error analyzing repository {repository_id}')
+    except Exception as e:
+        logging.error(f'Celery analyzer error for repository: {repository_id}')
+        logging.error(f'Error type: {type(e)}')
         exceptional_repository_logger.info(f'repository_id: {repository_id}, name: {name}, clone_url: {clone_url}')
     finally:
         deleted = delete_repository(repository_id)

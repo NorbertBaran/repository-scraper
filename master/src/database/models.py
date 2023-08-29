@@ -20,12 +20,12 @@ class HaltestMetricsModel(BaseModel):
     n2: int
     vocabulary: int
     length: int
-    calculated_length: int
-    volume: int
-    difficulty: int
-    effort: int
-    time: int
-    bugs: int
+    calculated_length: float
+    volume: float
+    difficulty: float
+    effort: float
+    time: float
+    bugs: float
 
 class ComponentModel(BaseModel):
     type: str

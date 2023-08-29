@@ -18,11 +18,14 @@ def save_repository_metrics(metrics):
         return True
     return False
 
-@app.task(queue='updating-queue')
+@app.task(queue='updating-queue', soft_time_limit=120)
 def updating(metrics):
-    response = save_repository_metrics(metrics)
-    if response:
-        logging.info(f'Metrics saved successfully for repository {metrics["repository_id"]}')
-        update_logger.info(f'repository_id: {metrics["repository_id"]}, name: {metrics["name"]}, clone_url: {metrics["clone_url"]}')
-    else:
-        logging.error(f'Failed to save metrics for repository {metrics["repository_id"]}')
+    try:
+        response = save_repository_metrics(metrics)
+        if response:
+            logging.info(f'Metrics saved successfully for repository {metrics["repository_id"]}')
+            update_logger.info(f'repository_id: {metrics["repository_id"]}, name: {metrics["name"]}, clone_url: {metrics["clone_url"]}')
+        else:
+            logging.error(f'Failed to save metrics for repository {metrics["repository_id"]}')
+    except:
+        logging.info('Updating timeout')

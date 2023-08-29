@@ -24,9 +24,9 @@ processed_file_logger = logging.getLogger('processed-file-logger')
 processable_file_handler = logging.FileHandler('/logs/processed-files.log')
 processed_file_logger.addHandler(processable_file_handler)
 
-# not_processed_file_logger = logging.getLogger('not-processed-file-logger')
-# not_processable_file_handler = logging.FileHandler('/logs/not-processed-files.log')
-# not_processed_file_logger.addHandler(not_processable_file_handler)
+timeout_logger = logging.getLogger('timeout-repositories')
+timeout_handler = logging.FileHandler('/logs/tiemout-repositories.log')
+timeout_logger.addHandler(timeout_handler)
 
 def analyze_repository(id: int, name: str, clone_url: str):
 
@@ -168,6 +168,7 @@ def analyzing(repository_id: int, name: str, clone_url: str):
             logging.error(f'Failed to analyze repository {repository_id}')
     except:
         logging.error(f'Time limit exceeded while analyzing repository {repository_id}')
+        timeout_logger.info(f'repository_id: {repository_id}, name: {name}, clone_url: {clone_url}')
     finally:
         deleted = delete_repository(repository_id)
         if deleted:

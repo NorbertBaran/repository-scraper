@@ -16,8 +16,8 @@ download_logger = logging.getLogger('downloaded-repositories')
 download_handler = logging.FileHandler('/logs/downloaded-repositories.log')
 download_logger.addHandler(download_handler)
 
-clone_logger = logging.getLogger('cloning-status')
-clone_handler = logging.FileHandler('/logs/cloning-status.log')
+clone_logger = logging.getLogger('cloning-state')
+clone_handler = logging.FileHandler('/logs/cloning-state.log')
 clone_logger.addHandler(clone_handler)
 
 def get_repository_metadata():
@@ -30,7 +30,7 @@ def get_repository_metadata():
 def clone_repository(id: int, url: str):
     try:
         subprocess.run(['git', 'clone', url, f'{REPOSITORIES}/{id}'])
-        clone_logger.info(f'Cloned: {len(os.listdir(REPOSITORIES))}')
+        clone_logger.info(os.listdir(REPOSITORIES))
         while len(os.listdir(REPOSITORIES)) >= int(MAX_DOWNLOADED_REPOSITORIES):
             logging.info(f'Waiting for process downloaded repositories before dowlnoading more...')
             clone_logger.info('Waiting for process downloaded repositories before dowlnoading more...')

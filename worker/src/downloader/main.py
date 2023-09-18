@@ -29,16 +29,16 @@ def get_repository_metadata():
 
 def clone_repository(id: int, url: str):
     try:
-        subprocess.run(['git', 'clone', url, f'{REPOSITORIES}/{id}'])
-        clone_logger.info(os.listdir(REPOSITORIES))
         while len(os.listdir(REPOSITORIES)) >= int(MAX_DOWNLOADED_REPOSITORIES):
             clone_logger.info('Waiting for process downloaded repositories before dowlnoading more...')
             time.sleep(10)
+        subprocess.run(['git', 'clone', url, f'{REPOSITORIES}/{id}'])
+        clone_logger.info(os.listdir(REPOSITORIES))
         return True
     except:
         return False
 
-@app.task(queue='downloading-queue', soft_time_limit=120)
+@app.task(queue='downloading-queue', soft_time_limit=125)
 def downloading():
     try:
         metadata = get_repository_metadata()

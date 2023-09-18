@@ -45,6 +45,7 @@ services:
       - postgres
     env_file:
       - .env
+    cpus: 0.5
 
 networks:
   repository-scraper:

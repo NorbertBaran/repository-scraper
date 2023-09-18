@@ -30,6 +30,10 @@ processed_file_logger = logging.getLogger('processed-file-logger')
 processable_file_handler = logging.FileHandler('/logs/processed-files.log')
 processed_file_logger.addHandler(processable_file_handler)
 
+not_processed_file_logger = logging.getLogger('not-processed-file-logger')
+not_processable_file_handler = logging.FileHandler('/logs/not-processed-files.log')
+not_processed_file_logger.addHandler(not_processable_file_handler)
+
 exceptional_repository_logger = logging.getLogger('exceptional-repositories')
 exceptional_repository_handler = logging.FileHandler('/logs/exceptional-repositories.log')
 exceptional_repository_logger.addHandler(exceptional_repository_handler)
@@ -170,7 +174,7 @@ def delete_repository(id: int):
     except:
         return False
 
-@app.task(queue='analyzing-queue', soft_time_limit=15)
+@app.task(queue='analyzing-queue', soft_time_limit=5)
 def analyzing(repository_id: int, name: str, clone_url: str):
     try:
         metrics = analyze_repository(repository_id, name, clone_url)

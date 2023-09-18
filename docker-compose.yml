@@ -1,0 +1,5 @@
+version: "3.9"
+
+include:
+  - master/docker-compose.yml
+  - worker/docker-compose.base.yml

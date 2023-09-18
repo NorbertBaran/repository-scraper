@@ -1,0 +1,25 @@
+version: "3.9"
+
+include:
+  - docker-compose.base.yml
+
+services:
+
+  redis:
+    container_name: repository-scraping-redis
+    hostname: redis
+    image: redis:7.0.11-alpine
+    networks:
+      - repository-scraper
+    volumes:
+      - redis-volume:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
+    command: redis-server /usr/local/etc/redis/redis.conf
+
+networks:
+  repository-scraper:
+    name: repository-scraper
+
+volumes:
+  redis-volume:
+    name: repository-scraping-redis-volume

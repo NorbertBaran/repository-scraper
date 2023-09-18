@@ -1,0 +1,28 @@
+version: "3.9"
+
+services:
+  
+  worker:
+    container_name: repository-scraping-worker
+    hostname: worker
+    image: repository-scraping-worker
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - REDIS_CONNECTION=${REDIS_CONNECTION}
+      - MASTER_URL=${MASTER_URL}
+      - REPOSITORIES_PATH=${REPOSITORIES_PATH}
+    networks:
+      - repository-scraper
+    volumes:
+      - worker-logs-volume:/logs
+    depends_on:
+      - redis
+    env_file:
+      - .env
+    cpus: 0.5
+
+volumes:
+  worker-logs-volume:
+    name: repository-scraping-worker-logs-volume
